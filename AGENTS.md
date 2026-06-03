@@ -97,7 +97,7 @@ pi-catppuccin-tui/
 - Opt-in enhancement state persists per session branch through `catppuccin-tui-state`
   custom entries and restores on `session_start` / `session_tree`, so `/reload`
   keeps enabled features on without making them default-on for new sessions.
-- **PENDING:** npm publish + pi.dev discoverability, and the manual in-Pi visual pass
-  (select each theme in `/settings`, inspect editor/footer/markdown/tool boxes/diffs/
-  thinking colors, toggle `/catppuccin-tui`, run `/reload`). Per SESSION_HANDOFF: do
-  not publish until local install + visual pass are complete.
+- Manual in-Pi visual pass was confirmed complete by the user on 2026-06-03.
+- Published to npm as `pi-catppuccin-tui@0.1.2`; pi.dev package catalog search finds
+  the package and shows `$ pi install npm:pi-catppuccin-tui`.
+- Optional follow-up: create/push a `v0.1.2` git tag if desired.

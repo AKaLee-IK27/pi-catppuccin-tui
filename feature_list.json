@@ -24,14 +24,14 @@
     {
       "id": "feat-004",
       "title": "Manual in-Pi visual pass (themes + enhancements)",
-      "status": "pending",
-      "evidence": "Required by SESSION_HANDOFF ('do not publish until local install and visual check pass') and README publish checklist. Steps: pi install <abs path>, select each theme in /settings, inspect editor/footer/markdown/tool boxes/diffs/thinking colors, toggle /catppuccin-tui. NOT yet performed in this harness."
+      "status": "done",
+      "evidence": "Manual in-Pi visual pass confirmed by user on 2026-06-03 before publish approval: local install, all 4 themes, optional enhancements, and `/reload` persistence checked."
     },
     {
       "id": "feat-005",
       "title": "npm publish + pi.dev discoverability",
-      "status": "pending",
-      "evidence": "SESSION_HANDOFF goal: published via npm, discoverable on https://pi.dev/packages. Post-publish checks: `npm view pi-catppuccin-tui`, search pi.dev/packages. Blocked on feat-004."
+      "status": "done",
+      "evidence": "Published as pi-catppuccin-tui@0.1.2 on npm. `npm view pi-catppuccin-tui@0.1.2 name version dist-tags dist.tarball --json` -> latest=0.1.2 with registry tarball. pi.dev package catalog search for `pi-catppuccin-tui` returned 1 result with install command `$ pi install npm:pi-catppuccin-tui`."
     }
   ]
 }

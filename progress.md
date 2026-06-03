@@ -96,9 +96,28 @@ showing the theme name. Updated README so it matches the current footer behavior
 - Mock persistence restore → saved toggles survive simulated reload, and restored
   footer remains width-safe at 100, 60, 40, and 24 columns.
 
+## 2026-06-03 — Publish 0.1.2
+
+Published the package after the user confirmed the manual in-Pi visual pass was
+complete.
+
+### Verified
+
+- `npm whoami` → `rowlet17`.
+- `npm view pi-catppuccin-tui version --json` before publish → `"0.1.1"`.
+- `npm version 0.1.2 --no-git-tag-version` updated `package.json`.
+- `npm run validate` → "Validated 4 themes with 51 Pi color tokens each."
+- `npm pack --dry-run --json` → `pi-catppuccin-tui@0.1.2`, 11 package files.
+- Mock persistence restore → saved toggles survive simulated reload, and restored
+  footer remains width-safe at 100, 60, 40, and 24 columns.
+- `npm publish` initially required browser/OTP auth; after user completed it,
+  `npm view pi-catppuccin-tui version --json` → `"0.1.2"`.
+- `npm view pi-catppuccin-tui@0.1.2 name version dist-tags dist.tarball --json`
+  → latest is `0.1.2` with registry tarball.
+- pi.dev package catalog search for `pi-catppuccin-tui` returned 1 result with
+  install command `$ pi install npm:pi-catppuccin-tui`.
+
 ### Next
 
-- feat-004: run the manual in-Pi visual pass (install locally, check all 4 themes
-  in `/settings`, toggle `/catppuccin-tui`, then `/reload` and confirm toggles
-  remain enabled).
-- feat-005: publish to npm + confirm pi.dev discoverability — only after feat-004.
+- Optional: create and push a `v0.1.2` git tag if desired.
+- Optional: monitor pi.dev/npm for install feedback.
