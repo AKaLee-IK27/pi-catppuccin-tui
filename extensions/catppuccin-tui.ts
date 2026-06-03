@@ -2,6 +2,7 @@ import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-a
 import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 
 const STATUS_ID = "catppuccin-tui";
+const STATE_CUSTOM_TYPE = "catppuccin-tui-state";
 
 const macchiato = {
   mauve: "#c6a0f6",
@@ -9,22 +10,16 @@ const macchiato = {
   lavender: "#b7bdf8",
   green: "#a6da95",
   peach: "#f5a97f",
-  subtext0: "#a5adcb",
+  overlay0: "#6e738d",
   overlay1: "#8087a2",
-};
-
-const themeLabels: Record<string, string> = {
-  "catppuccin-tui-latte": "Latte",
-  "catppuccin-tui-frappe": "Frappé",
-  "catppuccin-tui-macchiato": "Macchiato",
-  "catppuccin-tui-mocha": "Mocha",
 };
 
 type Feature = "indicator" | "status" | "footer";
 type Toggle = "on" | "off";
 type StatusPhase = "ready" | "working";
+type PersistedState = Record<Feature, boolean>;
 
-const state: Record<Feature, boolean> = {
+const state: PersistedState = {
   indicator: false,
   status: false,
   footer: false,
@@ -47,6 +42,19 @@ function formatCount(value: number): string {
   return `${(value / 1_000_000).toFixed(1)}m`;
 }
 
+function formatModelName(model: string): string {
+  return (model.split("/").pop() ?? model).replace(/-\d{8}$/, "");
+}
+
+function footerFits(width: number, left: string, right: string): boolean {
+  return visibleWidth(left) + 1 + visibleWidth(right) <= width;
+}
+
+function formatFooterLine(width: number, left: string, right: string): string {
+  const padWidth = Math.max(1, width - visibleWidth(left) - visibleWidth(right));
+  return truncateToWidth(`${left}${" ".repeat(padWidth)}${right}`, width, "");
+}
+
 function getUsage(ctx: ExtensionContext): { input: number; output: number; cost: number } {
   let input = 0;
   let output = 0;
@@ -63,12 +71,6 @@ function getUsage(ctx: ExtensionContext): { input: number; output: number; cost:
   }
 
   return { input, output, cost };
-}
-
-function getThemeLabel(ctx: ExtensionContext): string {
-  const name = ctx.ui.theme.name;
-  if (!name) return "custom theme";
-  return themeLabels[name] ?? name;
 }
 
 function applyIndicator(ctx: ExtensionContext): void {
@@ -104,9 +106,10 @@ function applyStatus(ctx: ExtensionContext, phase: StatusPhase = "ready"): void 
     return;
   }
 
-  const icon = phase === "working" ? fg(macchiato.overlay1, "⋯") : fg(macchiato.green, "✓");
-  const label = phase === "working" ? "working" : "ready";
-  ctx.ui.setStatus(STATUS_ID, `${icon} ${fg(macchiato.subtext0, `${getThemeLabel(ctx)} · ${label}`)}`);
+  const icon = phase === "working" ? fg(macchiato.mauve, "⋯") : fg(macchiato.green, "✓");
+  const label = phase === "working" ? fg(macchiato.mauve, "working") : fg(macchiato.green, "ready");
+  const model = ctx.model?.id ?? "no model";
+  ctx.ui.setStatus(STATUS_ID, `${icon} ${label} ${fg(macchiato.overlay0, "·")} ${fg(macchiato.blue, model)}`);
 }
 
 function applyFooter(ctx: ExtensionContext): void {
@@ -120,7 +123,7 @@ function applyFooter(ctx: ExtensionContext): void {
     return;
   }
 
-  ctx.ui.setFooter((tui, theme, footerData) => {
+  ctx.ui.setFooter((tui, _theme, footerData) => {
     const unsubscribe = footerData.onBranchChange(() => tui.requestRender());
 
     return {
@@ -131,44 +134,97 @@ function applyFooter(ctx: ExtensionContext): void {
 
         const usage = getUsage(ctx);
         const branch = footerData.getGitBranch();
-        const themeName = theme.name ? themeLabels[theme.name] ?? theme.name : "custom theme";
-        const model = ctx.model?.id ?? "no model";
-        const branchText = branch ? `git:${branch}` : "no git";
+        const model = formatModelName(ctx.model?.id ?? "no model");
+        const branchName = branch ?? "no git";
+        const compactStats = [
+          fg(macchiato.blue, `↑${formatCount(usage.input)}`),
+          fg(macchiato.lavender, `↓${formatCount(usage.output)}`),
+          fg(macchiato.peach, `$${usage.cost.toFixed(3)}`),
+        ].join(" ");
 
-        const left = `${theme.fg("accent", "◌")} ${theme.fg("subtext1", themeName)}`;
-        const right = theme.fg(
-          "overlay1",
-          `${model} · ${branchText} · ↑${formatCount(usage.input)} ↓${formatCount(usage.output)}`,
-        ) + theme.fg("overlay0", ` $${usage.cost.toFixed(3)}`);
-        const padWidth = Math.max(1, width - visibleWidth(left) - visibleWidth(right));
-        const line = `${left}${" ".repeat(padWidth)}${right}`;
+        const fullLeft = [
+          fg(macchiato.mauve, "◆"),
+          fg(macchiato.blue, model),
+          fg(macchiato.overlay0, "•"),
+          fg(macchiato.green, branch ? `git ${branchName}` : branchName),
+        ].join(" ");
+        const fullRight = [
+          fg(macchiato.blue, `in ${formatCount(usage.input)}`),
+          fg(macchiato.lavender, `out ${formatCount(usage.output)}`),
+          fg(macchiato.peach, `cost $${usage.cost.toFixed(3)}`),
+        ].join("  ");
 
-        return [truncateToWidth(line, width, "")];
+        if (footerFits(width, fullLeft, fullRight)) {
+          return [formatFooterLine(width, fullLeft, fullRight)];
+        }
+
+        const compactLeft = [fg(macchiato.mauve, "◆"), fg(macchiato.blue, model), fg(macchiato.overlay0, "•"), fg(macchiato.green, branchName)].join(" ");
+        if (footerFits(width, compactLeft, compactStats)) {
+          return [formatFooterLine(width, compactLeft, compactStats)];
+        }
+
+        return [truncateToWidth([fg(macchiato.mauve, "◆"), fg(macchiato.blue, model), compactStats].join(" "), width, "")];
       },
     };
   });
   footerInstalled = true;
 }
 
-function setFeature(ctx: ExtensionContext, feature: Feature, toggle: Toggle): void {
+function applyAll(ctx: ExtensionContext): void {
+  applyIndicator(ctx);
+  applyStatus(ctx);
+  applyFooter(ctx);
+}
+
+function readPersistedState(ctx: ExtensionContext): PersistedState | undefined {
+  let savedState: PersistedState | undefined;
+
+  for (const entry of ctx.sessionManager.getBranch()) {
+    if (entry.type !== "custom" || entry.customType !== STATE_CUSTOM_TYPE) continue;
+    const data = entry.data as Partial<PersistedState> | undefined;
+    if (!data) continue;
+
+    savedState = {
+      indicator: data.indicator === true,
+      status: data.status === true,
+      footer: data.footer === true,
+    };
+  }
+
+  return savedState;
+}
+
+function persistState(pi: ExtensionAPI): void {
+  pi.appendEntry<PersistedState>(STATE_CUSTOM_TYPE, { ...state });
+}
+
+function restoreState(ctx: ExtensionContext): void {
+  const savedState = readPersistedState(ctx);
+  state.indicator = savedState?.indicator ?? false;
+  state.status = savedState?.status ?? false;
+  state.footer = savedState?.footer ?? false;
+  applyAll(ctx);
+}
+
+function setFeature(pi: ExtensionAPI, ctx: ExtensionContext, feature: Feature, toggle: Toggle, shouldPersist = true): void {
   state[feature] = toggle === "on";
 
   if (feature === "indicator") applyIndicator(ctx);
   if (feature === "status") applyStatus(ctx);
   if (feature === "footer") applyFooter(ctx);
+  if (shouldPersist) persistState(pi);
 }
 
 function statusLine(): string {
   return `indicator=${state.indicator ? "on" : "off"}, status=${state.status ? "on" : "off"}, footer=${state.footer ? "on" : "off"}`;
 }
 
-function reset(ctx: ExtensionContext): void {
+function reset(pi: ExtensionAPI, ctx: ExtensionContext): void {
   state.indicator = false;
   state.status = false;
   state.footer = false;
-  applyIndicator(ctx);
-  applyStatus(ctx);
-  applyFooter(ctx);
+  applyAll(ctx);
+  persistState(pi);
 }
 
 export default function (pi: ExtensionAPI) {
@@ -189,7 +245,7 @@ export default function (pi: ExtensionAPI) {
       }
 
       if (feature === "reset") {
-        reset(ctx);
+        reset(pi, ctx);
         ctx.ui.notify("Catppuccin TUI enhancements reset", "info");
         return;
       }
@@ -200,9 +256,10 @@ export default function (pi: ExtensionAPI) {
       }
 
       if (feature === "all") {
-        setFeature(ctx, "indicator", toggle);
-        setFeature(ctx, "status", toggle);
-        setFeature(ctx, "footer", toggle);
+        setFeature(pi, ctx, "indicator", toggle, false);
+        setFeature(pi, ctx, "status", toggle, false);
+        setFeature(pi, ctx, "footer", toggle, false);
+        persistState(pi);
         ctx.ui.notify(`Catppuccin TUI enhancements ${toggle}`, "info");
         return;
       }
@@ -212,9 +269,17 @@ export default function (pi: ExtensionAPI) {
         return;
       }
 
-      setFeature(ctx, feature, toggle);
+      setFeature(pi, ctx, feature, toggle);
       ctx.ui.notify(`Catppuccin TUI ${feature} ${toggle}`, "info");
     },
+  });
+
+  pi.on("session_start", async (_event, ctx) => {
+    restoreState(ctx);
+  });
+
+  pi.on("session_tree", async (_event, ctx) => {
+    restoreState(ctx);
   });
 
   pi.on("turn_start", async (_event, ctx) => {

@@ -1,0 +1,37 @@
+{
+  "project": "pi-catppuccin-tui",
+  "updated": "2026-06-03",
+  "note": "Entries below trace to real evidence (git log, scripts, extension source, SESSION_HANDOFF). Update status + evidence as work proceeds.",
+  "features": [
+    {
+      "id": "feat-001",
+      "title": "Four exact Catppuccin Pi themes (Latte, Frappé, Macchiato, Mocha)",
+      "status": "done",
+      "evidence": "scripts/generate-themes.mjs emits 4 themes/*.json; `npm run validate` -> 'Validated 4 themes with 51 Pi color tokens each.' (run 2026-06-02)"
+    },
+    {
+      "id": "feat-002",
+      "title": "Theme generator + structural validator (51-token contract)",
+      "status": "done",
+      "evidence": "scripts/generate-themes.mjs (palette + colorTokens, source of truth) and scripts/validate-themes.mjs (requiredTokens=51, 4 exact names, hex check). Wired as npm scripts build:themes / validate."
+    },
+    {
+      "id": "feat-003",
+      "title": "/catppuccin-tui extension: indicator, status, footer toggles (off by default)",
+      "status": "done",
+      "evidence": "extensions/catppuccin-tui.ts registers `catppuccin-tui` command with indicator/status/footer/all/reset; state initialized all-false; applyIndicator/applyStatus/applyFooter + Pi event hooks. 2026-06-03: status/footer no longer show the theme name; status shows phase + model; footer shows shortened model, git branch, input/output token counts, and cost with Catppuccin color-coded segments plus full/compact/mini responsive layouts. Toggle state persists as `catppuccin-tui-state` custom session entries and restores on `session_start` / `session_tree`, so opted-in footer/status/indicator survive `/reload` without becoming default-on for sessions that never opted in. README documents the telemetry footer and reload persistence. `npm run validate` -> 'Validated 4 themes with 51 Pi color tokens each.'; source scan confirmed no theme-name labels remain; static persistence scan passed; mock persistence restore passed with width-safe footer output at 100/60/40/24 columns; `npm pack --dry-run --json` -> 11 files, includes README, extension, scripts, and 4 themes."
+    },
+    {
+      "id": "feat-004",
+      "title": "Manual in-Pi visual pass (themes + enhancements)",
+      "status": "pending",
+      "evidence": "Required by SESSION_HANDOFF ('do not publish until local install and visual check pass') and README publish checklist. Steps: pi install <abs path>, select each theme in /settings, inspect editor/footer/markdown/tool boxes/diffs/thinking colors, toggle /catppuccin-tui. NOT yet performed in this harness."
+    },
+    {
+      "id": "feat-005",
+      "title": "npm publish + pi.dev discoverability",
+      "status": "pending",
+      "evidence": "SESSION_HANDOFF goal: published via npm, discoverable on https://pi.dev/packages. Post-publish checks: `npm view pi-catppuccin-tui`, search pi.dev/packages. Blocked on feat-004."
+    }
+  ]
+}

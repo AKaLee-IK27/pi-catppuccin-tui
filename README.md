@@ -79,7 +79,8 @@ Notes:
 
 - `indicator` changes the inline streaming indicator to a small Macchiato pulse.
 - `status` adds a Catppuccin status entry to Pi's footer status area.
-- `footer` replaces the default footer with a compact Catppuccin footer showing theme, model, git branch, token counts, and cost.
+- `footer` replaces the default footer with a compact Catppuccin telemetry line showing the current model, git branch, token counts, and cost.
+- Enabled enhancements persist in the current session branch and are restored after `/reload`.
 
 ## Verify before publishing
 
@@ -96,6 +97,7 @@ Manual checks before publishing:
 2. Select each theme in `/settings`.
 3. Inspect editor borders, footer, markdown, tool boxes, diffs, and thinking-level colors.
 4. Toggle the optional enhancements with `/catppuccin-tui`.
+5. Run `/reload` and confirm enabled enhancements stay on.
 
 Do not publish until the local install and visual pass are complete.
 
